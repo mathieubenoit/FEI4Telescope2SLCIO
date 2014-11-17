@@ -71,7 +71,7 @@ def convertRun( inputFileName, outputFileName, runNumber, nplanes=7 ):
     aDataSet = JudithData(inputFileName,nplanes)
 
     MAXEVENTS = aDataSet.GetNEvents()
-    MAXEVENTS = 500
+    #MAXEVENTS = 500
  
     NEVENTS   = 0
 
