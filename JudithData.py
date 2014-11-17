@@ -50,17 +50,26 @@ class JudithData:
         
         for tree in  self.planeTrees : 
             tree.GetEntry(event_nr)
-        
+	    
+        for plane in range(7):            
+            self.HitInCluster[plane]   = self.planeTrees[plane].HitInCluster
+            self.NHits[plane]           = self.planeTrees[plane].NHits
+            self.PixX[plane]            = self.planeTrees[plane].PixX
+            self.PixY[plane]            = self.planeTrees[plane].PixY
+            self.Lv1[plane]             = self.planeTrees[plane].Timing
+            self.ToT [plane]            = self.planeTrees[plane].Value	       
         
         telescopeData = [[] for i in range(len(self.planeTrees))]
         
-        for i in range(len(self.planeTrees)) :
+	for i in range(len(self.planeTrees)) :
             for j,tot in enumerate(self.ToT) : 
                 
-                if((self.PixX[i][j]!=0 and self.PixY[i][j]!=0) and (self.ToT[i][j]!=0 and self.Lv1[i][j]!=0)) :
-                    if((self.PixX[i][j]>=0 and self.PixY[i][j]>=0) and (self.PixX[i][j]<80 and self.PixY[i][j]<=336)) :
-                        telescopeData[i].append([self.PixX[i][j],self.PixY[i][j],self.ToT[i][j],self.Lv1[i][j]])
-            
+                try :
+			if((self.PixX[i][j]!=0 and self.PixY[i][j]!=0)) :
+                	    if((self.PixX[i][j]>=0 and self.PixY[i][j]>=0) and (self.PixX[i][j]<80 and self.PixY[i][j]<=336)) :
+                        	telescopeData[i].append([self.PixX[i][j],self.PixY[i][j],self.ToT[i][j],self.Lv1[i][j]])
+            	except : 
+			pass
             
         return telescopeData
         

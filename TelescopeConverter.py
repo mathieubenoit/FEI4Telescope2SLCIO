@@ -7,9 +7,9 @@ Tool to convert allpix telescope simulation files into LCIO EUTelescope format.
 '''
 
 from pyLCIO import  UTIL
-from ROOT import TVector3, TLorentzVector, TRandom3, TMath, std, TH1D, TCanvas
+from ROOT import TVector3, TLorentzVector, TRandom3, TMath, std, TH1D, TCanvas, TH2D
 from JudithData  import *
-
+from math import floor
 
 #Compiled with Cython if available, comment otherwise
 #import pyximport; pyximport.install(pyimport=True)
@@ -53,11 +53,11 @@ def convertRun( inputFileName, outputFileName, runNumber, nplanes=7 ):
     run.setRunNumber( runNumber )
     run.setDetectorName( detectorName )
     run.parameters().setValue  ( 'GeoID'            , 0 )
-    run.parameters().setValues ( 'MaxX'             , std.vector(int)(6,335) ) 
-    run.parameters().setValues ( 'MaxY'             , std.vector(int)(6,79) )
-    run.parameters().setValues ( 'MinX'             , std.vector(int)(6,0) ) 
-    run.parameters().setValues ( 'MinY'             , std.vector(int)(6,0) )
-    run.parameters().setValue  ( 'NoOfDetector'     , 6 )
+    run.parameters().setValues ( 'MaxX'             , std.vector(int)(nplanes,335) ) 
+    run.parameters().setValues ( 'MaxY'             , std.vector(int)(nplanes,79) )
+    run.parameters().setValues ( 'MinX'             , std.vector(int)(nplanes,0) ) 
+    run.parameters().setValues ( 'MinY'             , std.vector(int)(nplanes,0) )
+    run.parameters().setValue  ( 'NoOfDetector'     , nplanes )
     run.parameters().setValues ( 'AppliedProcessor' , std.vector('string')(1,'') )
     run.parameters().setValue  ( 'DAQHWName'        , 'EUDRB' )
     run.parameters().setValue  ( 'DAQSWName'        , 'EUDAQ' )
@@ -68,16 +68,16 @@ def convertRun( inputFileName, outputFileName, runNumber, nplanes=7 ):
     writer.writeRunHeader( run )
   
 
-    aDataSet = JudithData("/data/Testbeam_Data/August2014_HVCMOS_FEI4/RunData/cosmic_C19_2207-2222.root",7)
+    aDataSet = JudithData(inputFileName,nplanes)
 
     MAXEVENTS = aDataSet.GetNEvents()
-    #MAXEVENTS = 200000
+    MAXEVENTS = 500
  
     NEVENTS   = 0
 
     # event loop
+    
     for eventnr in range(MAXEVENTS):
-
 
         if ( eventnr%1000 == 0 ):
             print 'Events processed: %i ...' % eventnr
@@ -92,7 +92,7 @@ def convertRun( inputFileName, outputFileName, runNumber, nplanes=7 ):
 
         # parse input file
         telescopeData=aDataSet.GetEvent(eventnr)
-
+	#aDataSet.PrintEvent(eventnr)
 
         # if first event, create additional setup collection(s)
         if eventnr == 0:
@@ -128,16 +128,31 @@ def convertRun( inputFileName, outputFileName, runNumber, nplanes=7 ):
             planeData = IMPL.TrackerDataImpl()
 
             idEncoder_Telescope.reset()
-            idEncoder_Telescope['sensorID'] = int( sensorID ) # cannot fit 300 in 5 bits!! FIXME
-            idEncoder_Telescope['sparsePixelType'] = 2
+            
+	    plane_tmp =0
+	    if(sensorID==0) :
+	    	idEncoder_Telescope['sensorID'] = int( 6 ) # cannot fit 300 in 5 bits!! FIXME
+	    	plane_tmp =6
+
+            else :
+	    	idEncoder_Telescope['sensorID'] = int( sensorID-1 ) # cannot fit 300 in 5 bits!! FIXME
+	    	plane_tmp =int( sensorID-1 )
+
+	    
+	    idEncoder_Telescope['sparsePixelType'] = 2
             idEncoder_Telescope.setCellID( planeData )
             
             # loop over hits
             chargeVec = std.vector(float)()
             for hit in telescopeData[sensorID]:
-                for val in hit :
-                    chargeVec.push_back( val )
-
+		for j,val in enumerate(hit) :
+						
+		    if ((plane_tmp==6) and (j%4)==1 ) :		    	
+			chargeVec.push_back( int(floor(val/2.0)) )
+		    else : 
+			chargeVec.push_back( val )
+			 
+			
             planeData.setChargeValues( chargeVec )
 
             trackerDataColl.addElement( planeData )
@@ -148,9 +163,7 @@ def convertRun( inputFileName, outputFileName, runNumber, nplanes=7 ):
     
     writer.flush()
     writer.close()
-
-
-
+    
 
 
 
@@ -165,7 +178,7 @@ def convertRun( inputFileName, outputFileName, runNumber, nplanes=7 ):
 #########################################################################################
 def usage():
     print 'Converts allpix generated telescope files into LCIO format'
-    print 'Usage:\n python %s <inputRootFile> <outputFile> runnumber' % ( sys.argv[0] )
+    print 'Usage:\n python %s <inputRootFile> <outputFile> runnumber nplanes' % ( sys.argv[0] )
 
 #########################################################################################
 
@@ -177,7 +190,7 @@ if __name__ == '__main__':
     if len( sys.argv ) < 3:
         usage()
         sys.exit( 1 )
-    convertRun( sys.argv[1], sys.argv[2],int(sys.argv[3]))
+    convertRun( sys.argv[1], sys.argv[2],int(sys.argv[3]),int(sys.argv[4]))
 
     for sensorID in sorted( telescopeTestDict.iterkeys() ):
         print sensorID, telescopeTestDict[sensorID]
