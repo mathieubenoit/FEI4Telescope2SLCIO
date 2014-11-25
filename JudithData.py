@@ -11,6 +11,7 @@ class JudithData:
 
     planeTrees = []
     
+    nplanes = 0
 
     HitInCluster = []
     NHits = []
@@ -24,6 +25,8 @@ class JudithData:
     def __init__(self,rootfile_name,nplanes) :
         
         self.judith_file = TFile(rootfile_name,"open")
+        
+        self.nplanes=nplanes
  
         for plane in range(nplanes):       
             self.HitInCluster.append(0)
@@ -51,7 +54,7 @@ class JudithData:
         for tree in  self.planeTrees : 
             tree.GetEntry(event_nr)
 	    
-        for plane in range(7):            
+        for plane in range(self.nplanes):            
             self.HitInCluster[plane]   = self.planeTrees[plane].HitInCluster
             self.NHits[plane]           = self.planeTrees[plane].NHits
             self.PixX[plane]            = self.planeTrees[plane].PixX
