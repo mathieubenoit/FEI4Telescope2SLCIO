@@ -128,30 +128,17 @@ def convertRun( inputFileName, outputFileName, runNumber, nplanes=7 ):
             planeData = IMPL.TrackerDataImpl()
 
             idEncoder_Telescope.reset()
-            
-	    plane_tmp =0
-	    if(sensorID==0) :
-	    	idEncoder_Telescope['sensorID'] = int( 6 ) # cannot fit 300 in 5 bits!! FIXME
-	    	plane_tmp =6
-
-            else :
-	    	idEncoder_Telescope['sensorID'] = int( sensorID-1 ) # cannot fit 300 in 5 bits!! FIXME
-	    	plane_tmp =int( sensorID-1 )
-
-	    
+	    idEncoder_Telescope['sensorID'] = int( sensorID) # cannot fit 300 in 5 bits!! FIXME
+            plane_tmp =int(sensorID)          
+    
 	    idEncoder_Telescope['sparsePixelType'] = 2
             idEncoder_Telescope.setCellID( planeData )
             
             # loop over hits
             chargeVec = std.vector(float)()
             for hit in telescopeData[sensorID]:
-		for j,val in enumerate(hit) :
-						
-		    if ((plane_tmp==6) and (j%4)==1 ) :		    	
-			chargeVec.push_back( int(floor(val/2.0)) )
-		    else : 
-			chargeVec.push_back( val )
-			 
+		for j,val in enumerate(hit) :						
+			chargeVec.push_back( val )			 
 			
             planeData.setChargeValues( chargeVec )
 
